@@ -1,8 +1,8 @@
 {
   "name": "chitchatter",
-  "version": "0.0.0",
-  "homepage": "https://chitchatter.im/",
-  "author": "Jeremy Kahn <jeremyckahn@gmail.com>",
+  "version": "0.1.0",
+  "homepage": "https://danielc-n.github.io/chitchatter/",
+  "author": "DanielC-N <npmdanielc-n@protonmail.com>",
   "license": "GPL-2.0-or-later",
   "dependencies": {
     "@emotion/react": "^11.10.0",
