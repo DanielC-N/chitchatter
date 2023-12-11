@@ -1,64 +1,91 @@
 import { PropsWithChildren } from 'react'
-import MuiDrawer from '@mui/material/Drawer'
 import List from '@mui/material/List'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
 import Divider from '@mui/material/Divider'
-import IconButton from '@mui/material/IconButton'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import ListItemButton from '@mui/material/ListItemButton'
-import Typography from '@mui/material/Typography'
+import VolumeUp from '@mui/icons-material/VolumeUp'
+import ListItem from '@mui/material/ListItem'
+import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
 
-import { PeerListHeader } from 'components/Shell/PeerListHeader'
-import { PeerNameDisplay } from 'components/PeerNameDisplay'
+import { UserInfo } from 'components/UserInfo'
+import { AudioState, Peer } from 'models/chat'
+import { PeerConnectionType } from 'services/PeerRoom'
+import { TrackerConnection } from 'services/ConnectionTest'
 
-import { Peer } from 'models/chat'
+import { PeerListHeader } from './PeerListHeader'
+import { PeerListItem } from './PeerListItem'
+import { ConnectionTestResults as IConnectionTestResults } from './useConnectionTest'
 
-export const peerListWidth = 240
+export const peerListWidth = 300
 
 export interface PeerListProps extends PropsWithChildren {
   userId: string
-  isPeerListOpen: boolean
+  roomId: string | undefined
   onPeerListClose: () => void
   peerList: Peer[]
+  peerConnectionTypes: Record<string, PeerConnectionType>
+  audioState: AudioState
+  peerAudios: Record<string, HTMLAudioElement>
+  connectionTestResults: IConnectionTestResults
 }
 
 export const PeerList = ({
   userId,
-  isPeerListOpen,
+  roomId,
   onPeerListClose,
   peerList,
+  peerConnectionTypes,
+  audioState,
+  peerAudios,
+  connectionTestResults,
 }: PeerListProps) => {
   return (
-    <MuiDrawer
-      sx={{
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: peerListWidth,
-          boxSizing: 'border-box',
-        },
-      }}
-      variant="persistent"
-      anchor="right"
-      open={isPeerListOpen}
-    >
-      <PeerListHeader>
-        <IconButton onClick={onPeerListClose} aria-label="Close peer list">
-          <ChevronRightIcon />
-        </IconButton>
-      </PeerListHeader>
+    <>
+      <PeerListHeader
+        onPeerListClose={onPeerListClose}
+        connectionTestResults={connectionTestResults}
+      />
       <Divider />
       <List>
-        <ListItemButton disableRipple={true}>
-          <Typography>
-            <PeerNameDisplay>{userId}</PeerNameDisplay> (you)
-          </Typography>
-        </ListItemButton>
+        <ListItem divider={true}>
+          {audioState === AudioState.PLAYING && (
+            <ListItemIcon>
+              <VolumeUp />
+            </ListItemIcon>
+          )}
+          <ListItemText>
+            <UserInfo userId={userId} />
+          </ListItemText>
+        </ListItem>
         {peerList.map((peer: Peer) => (
-          <ListItemButton key={peer.peerId} disableRipple={true}>
-            <PeerNameDisplay>{peer.userId}</PeerNameDisplay>
-          </ListItemButton>
+          <PeerListItem
+            key={peer.peerId}
+            peer={peer}
+            peerConnectionTypes={peerConnectionTypes}
+            peerAudios={peerAudios}
+          />
         ))}
+        {peerList.length === 0 &&
+        typeof roomId === 'string' &&
+        connectionTestResults.trackerConnection ===
+          TrackerConnection.CONNECTED &&
+        connectionTestResults.hasHost ? (
+          <>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                m: 2,
+              }}
+            >
+              <CircularProgress size={16} sx={{ mr: 1.5 }} />
+              <span>Searching for peers...</span>
+            </Box>
+          </>
+        ) : null}
       </List>
-      <Divider />
-    </MuiDrawer>
+    </>
   )
 }

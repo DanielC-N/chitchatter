@@ -1,8 +1,10 @@
 import { PropsWithChildren, useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { Theme } from '@mui/material/styles'
+import Box from '@mui/material/Box'
 import MuiDrawer from '@mui/material/Drawer'
 import List from '@mui/material/List'
+import MuiLink from '@mui/material/Link'
 import Typography from '@mui/material/Typography'
 import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
@@ -18,41 +20,29 @@ import QuestionMark from '@mui/icons-material/QuestionMark'
 import Brightness4Icon from '@mui/icons-material/Brightness4'
 import Brightness7Icon from '@mui/icons-material/Brightness7'
 import ReportIcon from '@mui/icons-material/Report'
+import GitInfo from 'react-git-info/macro'
 
 import { routes } from 'config/routes'
 import { SettingsContext } from 'contexts/SettingsContext'
-import { PeerNameDisplay } from 'components/PeerNameDisplay'
+import { ColorMode } from 'models/settings'
 
-import { DrawerHeader } from './DrawerHeader'
+const { commit } = GitInfo()
 
 export const drawerWidth = 240
 
 export interface DrawerProps extends PropsWithChildren {
   isDrawerOpen: boolean
-  onAboutLinkClick: () => void
-  onDisclaimerClick: () => void
   onDrawerClose: () => void
-  onHomeLinkClick: () => void
-  onSettingsLinkClick: () => void
   theme: Theme
-  userPeerId: string
 }
 
-export const Drawer = ({
-  isDrawerOpen,
-  onAboutLinkClick,
-  onDisclaimerClick,
-  onDrawerClose,
-  onHomeLinkClick,
-  onSettingsLinkClick,
-  theme,
-  userPeerId,
-}: DrawerProps) => {
+export const Drawer = ({ isDrawerOpen, onDrawerClose, theme }: DrawerProps) => {
   const settingsContext = useContext(SettingsContext)
   const colorMode = settingsContext.getUserSettings().colorMode
 
   const handleColorModeToggleClick = () => {
-    const newMode = colorMode === 'light' ? 'dark' : 'light'
+    const newMode =
+      colorMode === ColorMode.LIGHT ? ColorMode.DARK : ColorMode.LIGHT
     settingsContext.updateUserSettings({ colorMode: newMode })
   }
 
@@ -70,7 +60,16 @@ export const Drawer = ({
       anchor="left"
       open={isDrawerOpen}
     >
-      <DrawerHeader>
+      <Box
+        sx={theme => ({
+          display: 'flex',
+          alignItems: 'center',
+          padding: theme.spacing(0, 1),
+          // necessary for drawer content to be pushed below app bar
+          ...theme.mixins.toolbar,
+          justifyContent: 'flex-end',
+        })}
+      >
         <IconButton onClick={onDrawerClose} aria-label="Close menu">
           {theme.direction === 'ltr' ? (
             <ChevronLeftIcon />
@@ -78,26 +77,10 @@ export const Drawer = ({
             <ChevronRightIcon />
           )}
         </IconButton>
-      </DrawerHeader>
+      </Box>
       <Divider />
-      <ListItem disablePadding>
-        <ListItemText
-          sx={{
-            padding: '1em 1.5em',
-          }}
-          primary={
-            <Typography>
-              Your user name:{' '}
-              <PeerNameDisplay sx={{ fontWeight: 'bold' }}>
-                {userPeerId}
-              </PeerNameDisplay>
-            </Typography>
-          }
-        />
-      </ListItem>
-      <Divider />
-      <List role="navigation">
-        <Link to={routes.ROOT} onClick={onHomeLinkClick}>
+      <List role="navigation" aria-label="Navigation menu">
+        <Link to={routes.ROOT}>
           <ListItem disablePadding>
             <ListItemButton>
               <ListItemIcon>
@@ -107,7 +90,7 @@ export const Drawer = ({
             </ListItemButton>
           </ListItem>
         </Link>
-        <Link to={routes.SETTINGS} onClick={onSettingsLinkClick}>
+        <Link to={routes.SETTINGS}>
           <ListItem disablePadding>
             <ListItemButton>
               <ListItemIcon>
@@ -117,7 +100,7 @@ export const Drawer = ({
             </ListItemButton>
           </ListItem>
         </Link>
-        <Link to={routes.ABOUT} onClick={onAboutLinkClick}>
+        <Link to={routes.ABOUT}>
           <ListItem disablePadding>
             <ListItemButton>
               <ListItemIcon>
@@ -127,7 +110,7 @@ export const Drawer = ({
             </ListItemButton>
           </ListItem>
         </Link>
-        <Link to={routes.DISCLAIMER} onClick={onDisclaimerClick}>
+        <Link to={routes.DISCLAIMER}>
           <ListItem disablePadding>
             <ListItemButton>
               <ListItemIcon>
@@ -149,8 +132,27 @@ export const Drawer = ({
             <ListItemText primary="Change theme" />
           </ListItemButton>
         </ListItem>
+        <Divider />
+        <ListItem>
+          <Typography variant="subtitle2">
+            Build signature:{' '}
+            <Typography
+              sx={{
+                fontFamily: 'monospace',
+                display: 'inline',
+              }}
+            >
+              <MuiLink
+                target="_blank"
+                rel="noopener"
+                href={`${process.env.REACT_APP_GITHUB_REPO}/commit/${commit.hash}`}
+              >
+                {commit.shortHash}
+              </MuiLink>
+            </Typography>
+          </Typography>
+        </ListItem>
       </List>
-      <Divider />
     </MuiDrawer>
   )
 }

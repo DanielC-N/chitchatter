@@ -1,8 +1,9 @@
 import { createContext } from 'react'
 
-import { UserSettings } from 'models/settings'
+import { ColorMode, UserSettings } from 'models/settings'
+import { encryptionService } from 'services/Encryption'
 
-interface SettingsContextProps {
+export interface SettingsContextProps {
   updateUserSettings: (settings: Partial<UserSettings>) => Promise<void>
   getUserSettings: () => UserSettings
 }
@@ -11,8 +12,12 @@ export const SettingsContext = createContext<SettingsContextProps>({
   updateUserSettings: () => Promise.resolve(),
   getUserSettings: () => ({
     userId: '',
-    colorMode: 'dark',
+    customUsername: '',
+    colorMode: ColorMode.DARK,
     playSoundOnNewMessage: true,
     showNotificationOnNewMessage: true,
+    showActiveTypingStatus: true,
+    publicKey: encryptionService.cryptoKeyStub,
+    privateKey: encryptionService.cryptoKeyStub,
   }),
 })

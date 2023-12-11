@@ -7,3 +7,11 @@ import '@testing-library/jest-dom'
 afterEach(() => {
   jest.restoreAllMocks()
 })
+
+jest.mock('secure-file-transfer', () => ({
+  __esModule: true,
+  FileTransfer: class FileTransfer {
+    rescindAll() {}
+  },
+  setStreamSaverMitm: () => {},
+}))

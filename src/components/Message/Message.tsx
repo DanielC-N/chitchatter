@@ -1,8 +1,10 @@
 import { HTMLAttributes } from 'react'
+import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter'
+import YouTube from 'react-youtube'
 import Box from '@mui/material/Box'
+import Tooltip from '@mui/material/Tooltip'
 import Typography, { TypographyProps } from '@mui/material/Typography'
 import Link, { LinkProps } from '@mui/material/Link'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 // These imports need to be ts-ignored to prevent spurious errors that look
@@ -19,13 +21,21 @@ import { CodeProps } from 'react-markdown/lib/ast-to-react'
 // @ts-ignore
 import remarkGfm from 'remark-gfm'
 
-import { Message as IMessage, isMessageReceived } from 'models/chat'
+import {
+  InlineMedia as I_InlineMedia,
+  Message as IMessage,
+  isMessageReceived,
+  isInlineMedia,
+} from 'models/chat'
 import { PeerNameDisplay } from 'components/PeerNameDisplay'
+import { CopyableBlock } from 'components/CopyableBlock/CopyableBlock'
+
+import { InlineMedia } from './InlineMedia'
 
 import './Message.sass'
 
 export interface MessageProps {
-  message: IMessage
+  message: IMessage | I_InlineMedia
   showAuthor: boolean
   userId: string
 }
@@ -56,20 +66,39 @@ const componentMap = {
   // https://github.com/remarkjs/react-markdown#use-custom-components-syntax-highlight
   code({ node, inline, className, children, style, ...props }: CodeProps) {
     const match = /language-(\w+)/.exec(className || '')
+
     return !inline && match ? (
-      <SyntaxHighlighter
-        children={String(children).replace(/\n$/, '')}
-        language={match[1]}
-        style={materialDark}
-        PreTag="div"
-        {...props}
-      />
+      <CopyableBlock>
+        <SyntaxHighlighter
+          children={String(children).replace(/\n$/, '')}
+          language={match[1]}
+          style={materialDark}
+          PreTag="div"
+          {...props}
+        />
+      </CopyableBlock>
     ) : (
       <code className={className} {...props}>
         {children}
       </code>
     )
   },
+}
+
+const spaceNeededForSideDateTooltip = 850
+
+const getYouTubeVideoId = (videoUrl: string) => {
+  const trimmedMessage = videoUrl.trim()
+
+  const matchArray =
+    trimmedMessage.match(/https:\/\/www.youtube.com\/watch\?v=(\S{8,})$/) ||
+    trimmedMessage.match(/https:\/\/youtu.be\/(\S{8,})$/)
+
+  return matchArray?.pop()
+}
+
+const isYouTubeLink = (message: IMessage) => {
+  return typeof getYouTubeVideoId(message.text) === 'string'
 }
 
 export const Message = ({ message, showAuthor, userId }: MessageProps) => {
@@ -96,27 +125,45 @@ export const Message = ({ message, showAuthor, userId }: MessageProps) => {
           <PeerNameDisplay>{message.authorId}</PeerNameDisplay>
         </Typography>
       )}
-      <Box
-        sx={{
-          color: 'primary.contrastText',
-          backgroundColor,
-          margin: 0.5,
-          padding: '0.5em 0.75em',
-          borderRadius: 6,
-          float: message.authorId === userId ? 'right' : 'left',
-          transition: 'background-color 1s',
-          wordBreak: 'break-word',
-        }}
-        maxWidth="85%"
+      <Tooltip
+        placement={
+          window.innerWidth >= spaceNeededForSideDateTooltip ? 'left' : 'top'
+        }
+        title={String(
+          Intl.DateTimeFormat(undefined, {
+            dateStyle: 'short',
+            timeStyle: 'short',
+          }).format(message.timeSent)
+        )}
       >
-        <Markdown
-          components={componentMap}
-          remarkPlugins={[remarkGfm]}
-          linkTarget="_blank"
+        <Box
+          sx={{
+            color: 'primary.contrastText',
+            backgroundColor,
+            margin: 0.5,
+            padding: '0.5em 0.75em',
+            borderRadius: 6,
+            float: message.authorId === userId ? 'right' : 'left',
+            transition: 'background-color 1s',
+            wordBreak: 'break-word',
+          }}
+          maxWidth="85%"
         >
-          {message.text}
-        </Markdown>
-      </Box>
+          {isInlineMedia(message) ? (
+            <InlineMedia magnetURI={message.magnetURI} />
+          ) : isYouTubeLink(message) ? (
+            <YouTube videoId={getYouTubeVideoId(message.text)} />
+          ) : (
+            <Markdown
+              components={componentMap}
+              remarkPlugins={[remarkGfm]}
+              linkTarget="_blank"
+            >
+              {message.text}
+            </Markdown>
+          )}
+        </Box>
+      </Tooltip>
     </Box>
   )
 }

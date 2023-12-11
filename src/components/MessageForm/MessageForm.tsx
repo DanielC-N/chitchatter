@@ -1,6 +1,7 @@
 import {
   KeyboardEvent,
   SyntheticEvent,
+  useContext,
   useEffect,
   useRef,
   useState,
@@ -12,16 +13,22 @@ import Fab from '@mui/material/Fab'
 import ArrowUpward from '@mui/icons-material/ArrowUpward'
 
 import { messageCharacterSizeLimit } from 'config/messaging'
+import { SettingsContext } from 'contexts/SettingsContext'
+import classNames from 'classnames'
 
 interface MessageFormProps {
   onMessageSubmit: (message: string) => void
+  onMessageChange: (message: string) => void
   isMessageSending: boolean
 }
 
 export const MessageForm = ({
   onMessageSubmit,
+  onMessageChange,
   isMessageSending,
 }: MessageFormProps) => {
+  const settingsContext = useContext(SettingsContext)
+  const { showActiveTypingStatus } = settingsContext.getUserSettings()
   const textFieldRef = useRef<HTMLInputElement>(null)
   const [textMessage, setTextMessage] = useState('')
 
@@ -43,6 +50,7 @@ export const MessageForm = ({
   const handleMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target
     setTextMessage(value)
+    onMessageChange(value)
   }
 
   const submitMessage = () => {
@@ -68,7 +76,13 @@ export const MessageForm = ({
   }
 
   return (
-    <form onSubmit={handleMessageSubmit} className="p-4">
+    <form
+      onSubmit={handleMessageSubmit}
+      className={classNames({
+        'pt-4 px-4': showActiveTypingStatus,
+        'p-4': !showActiveTypingStatus,
+      })}
+    >
       <Stack direction="row" spacing={2}>
         <FormControl fullWidth>
           <TextField

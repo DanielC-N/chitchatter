@@ -1,12 +1,14 @@
-import { HTMLAttributes, useRef, useEffect, useState } from 'react'
+import { HTMLAttributes, useRef, useEffect, useState, useContext } from 'react'
 import cx from 'classnames'
 import Box from '@mui/material/Box'
+import useTheme from '@mui/material/styles/useTheme'
 
-import { Message as IMessage } from 'models/chat'
+import { Message as IMessage, InlineMedia } from 'models/chat'
 import { Message } from 'components/Message'
+import { ShellContext } from 'contexts/ShellContext'
 
 export interface ChatTranscriptProps extends HTMLAttributes<HTMLDivElement> {
-  messageLog: Array<IMessage>
+  messageLog: Array<IMessage | InlineMedia>
   userId: string
 }
 
@@ -15,6 +17,8 @@ export const ChatTranscript = ({
   messageLog,
   userId,
 }: ChatTranscriptProps) => {
+  const { showRoomControls } = useContext(ShellContext)
+  const theme = useTheme()
   const boxRef = useRef<HTMLDivElement>(null)
   const [previousMessageLogLength, setPreviousMessageLogLength] = useState(0)
 
@@ -30,8 +34,12 @@ export const ChatTranscript = ({
     const lastChild = children[children.length - 1]
     const lastChildHeight = lastChild.clientHeight
     const previousScrollTopMax = scrollTopMax - lastChildHeight
+
+    // Accounts for rounding errors in layout calculations
+    const marginBuffer = 1
+
     const wasPreviouslyScrolledToBottom =
-      Math.ceil(scrollTop) >= Math.ceil(previousScrollTopMax)
+      Math.ceil(scrollTop) >= Math.ceil(previousScrollTopMax) - marginBuffer
     const wasMessageLogPreviouslyEmpty = previousMessageLogLength === 0
     const shouldScrollToLatestMessage =
       wasPreviouslyScrolledToBottom || wasMessageLogPreviouslyEmpty
@@ -43,21 +51,31 @@ export const ChatTranscript = ({
     ) {
       boxEl.scrollTo({ top: scrollTopMax })
     }
-  }, [messageLog.length, previousMessageLogLength])
+  }, [messageLog, previousMessageLogLength])
 
   useEffect(() => {
     setPreviousMessageLogLength(messageLog.length)
   }, [messageLog.length])
 
+  const transcriptMaxWidth = theme.breakpoints.values.md
+  const transcriptPaddingX = `(50% - ${
+    transcriptMaxWidth / 2
+  }px) - ${theme.spacing(1)}`
+  const transcriptMinPadding = theme.spacing(1)
+
   return (
     <Box
       ref={boxRef}
       className={cx('ChatTranscript', className)}
-      sx={theme => ({
+      sx={{
         display: 'flex',
         flexDirection: 'column',
-        paddingY: theme.spacing(1),
-      })}
+        py: transcriptMinPadding,
+        pt: showRoomControls ? theme.spacing(10) : theme.spacing(2),
+        px: `max(${transcriptPaddingX}, ${transcriptMinPadding})`,
+        transition: `padding-top ${theme.transitions.duration.short}ms ${theme.transitions.easing.easeInOut}`,
+        width: '100%',
+      }}
     >
       {messageLog.map((message, idx) => {
         const previousMessage = messageLog[idx - 1]

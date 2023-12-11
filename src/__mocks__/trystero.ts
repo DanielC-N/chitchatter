@@ -1,14 +1,14 @@
-import { joinRoom as trysteroJoinRoom, RoomConfig, Room } from 'trystero'
+import { joinRoom as trysteroJoinRoom, Room, BaseRoomConfig } from 'trystero'
 
 export const joinRoom: typeof trysteroJoinRoom = (
-  _config: RoomConfig,
+  _config: BaseRoomConfig,
   _roomId: string
 ) => {
   const room: Room = {
     makeAction: () => [() => Promise.resolve([]), () => {}, () => {}],
     ping: () => Promise.resolve(0),
     leave: () => {},
-    getPeers: () => [],
+    getPeers: () => ({}),
     addStream: () => [Promise.resolve()],
     removeStream: () => {},
     addTrack: () => [Promise.resolve()],

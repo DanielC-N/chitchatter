@@ -3,9 +3,20 @@ import MuiMarkdown from 'mui-markdown'
 import Box from '@mui/material/Box'
 
 import { ShellContext } from 'contexts/ShellContext'
-import { messageCharacterSizeLimit } from 'config/messaging'
+import {
+  messageTranscriptSizeLimit,
+  messageCharacterSizeLimit,
+} from 'config/messaging'
 
 import './index.sass'
+
+const messageTranscriptSizeLimitFormatted = Intl.NumberFormat().format(
+  messageTranscriptSizeLimit
+)
+
+const messageCharacterSizeLimitFormatted = Intl.NumberFormat().format(
+  messageCharacterSizeLimit
+)
 
 export const About = () => {
   const { setTitle } = useContext(ShellContext)
@@ -30,6 +41,12 @@ Private rooms can only be joined by peers with a matching password. The password
 
 To connect to others, share the room URL with a secure tool such as [Burner Note](https://burnernote.com/) or [Yopass](https://yopass.se/). You will be notified when others join the room.
 
+##### Peer verification
+
+When you connect with a peer, Chitchatter automatically attempts to use [public-key cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography) to verify them. You can see everyone's public keys in the peer list. Feel free to share your public key with others (it is not sensitive information) so that they can uniquely identify you.
+
+All public and private keys are generated locally. Your private key is never sent to any peer or server.
+
 ##### Community rooms
 
 There is [a public list of community rooms](https://github.com/jeremyckahn/chitchatter/wiki/Chitchatter-Community-Rooms) that you can join to discuss various topics.
@@ -40,13 +57,13 @@ Conversation transcripts are erased from local memory as soon as you close the p
 
 When a peer joins a **public** room with participants already in it, the new peer will automatically request the transcript of the conversation that has already taken place from the other peers. Once all peers leave the room, the conversation is completely erased. Peers joining a **private** room will not get the conversation transcript backfilled.
 
+Chat transcript history is limited to ${messageTranscriptSizeLimitFormatted} messages for all rooms.
+
 #### Message Authoring
 
 Chat messages support [GitHub-flavored Markdown](https://github.github.com/gfm/) with code syntax highlighting.
 
-Press \`Enter\` to send a message. Press \`Shift + Enter\` to insert a line break. Message size is limited to ${Intl.NumberFormat().format(
-          messageCharacterSizeLimit
-        )} characters.
+Press \`Enter\` to send a message. Press \`Shift + Enter\` to insert a line break. Message size is limited to ${messageCharacterSizeLimitFormatted} characters.
         `}
       </MuiMarkdown>
     </Box>

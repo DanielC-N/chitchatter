@@ -9,13 +9,16 @@ import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import MuiLink from '@mui/material/Link'
 import GitHubIcon from '@mui/icons-material/GitHub'
-import Tooltip from '@mui/material/Tooltip'
+import Cached from '@mui/icons-material/Cached'
+
 import { v4 as uuid } from 'uuid'
 
 import { routes } from 'config/routes'
 import { ShellContext } from 'contexts/ShellContext'
 import { PeerNameDisplay } from 'components/PeerNameDisplay'
 import { ReactComponent as Logo } from 'img/logo.svg'
+
+import { EmbedCodeDialog } from './EmbedCodeDialog'
 
 interface HomeProps {
   userId: string
@@ -24,6 +27,7 @@ interface HomeProps {
 export function Home({ userId }: HomeProps) {
   const { setTitle } = useContext(ShellContext)
   const [roomName, setRoomName] = useState(uuid())
+  const [showEmbedCode, setShowEmbedCode] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -47,6 +51,16 @@ export function Home({ userId }: HomeProps) {
     navigate(`/private/${roomName}`)
   }
 
+  const handleGetEmbedCodeClick = () => {
+    setShowEmbedCode(true)
+  }
+
+  const handleEmbedCodeWindowClose = () => {
+    setShowEmbedCode(false)
+  }
+
+  const isRoomNameValid = roomName.length > 0
+
   return (
     <Box className="Home">
       <main className="mt-6 px-4 max-w-3xl text-center mx-auto">
@@ -55,21 +69,31 @@ export function Home({ userId }: HomeProps) {
         </Link>
         <form onSubmit={handleFormSubmit} className="max-w-xl mx-auto">
           <Typography sx={{ mb: 2 }}>
-            Your user name:{' '}
+            Your username:{' '}
             <PeerNameDisplay paragraph={false} sx={{ fontWeight: 'bold' }}>
               {userId}
             </PeerNameDisplay>
           </Typography>
           <FormControl fullWidth>
-            <Tooltip title="Default room names are randomly generated client-side">
-              <TextField
-                label="Room name"
-                variant="outlined"
-                value={roomName}
-                onChange={handleRoomNameChange}
-                size="medium"
-              />
-            </Tooltip>
+            <TextField
+              label="Room name (generated client-side)"
+              variant="outlined"
+              value={roomName}
+              onChange={handleRoomNameChange}
+              InputProps={{
+                endAdornment: (
+                  <IconButton
+                    aria-label="Regenerate room id"
+                    onClick={() => setRoomName(uuid())}
+                    size="small"
+                  >
+                    <Cached />
+                  </IconButton>
+                ),
+                sx: { fontSize: { xs: '0.9rem', sm: '1rem' } },
+              }}
+              size="medium"
+            />
           </FormControl>
           <Box
             sx={{
@@ -83,6 +107,7 @@ export function Home({ userId }: HomeProps) {
               sx={{
                 marginTop: 2,
               }}
+              disabled={!isRoomNameValid}
             >
               Join public room
             </Button>
@@ -93,8 +118,21 @@ export function Home({ userId }: HomeProps) {
                 marginTop: 2,
                 marginLeft: 2,
               }}
+              disabled={!isRoomNameValid}
             >
               Join private room
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleGetEmbedCodeClick}
+              sx={{
+                marginTop: 2,
+                marginLeft: 2,
+              }}
+              disabled={!isRoomNameValid}
+            >
+              Get embed code
             </Button>
           </Box>
         </form>
@@ -102,29 +140,37 @@ export function Home({ userId }: HomeProps) {
       <Divider sx={{ my: 2 }} />
       <Box className="max-w-3xl text-center mx-auto px-4">
         <Typography variant="body1">
-          This is a communication tool that is free, open source, and designed
-          for simplicity and security. All communication between you and your
-          online peers is encrypted. There is no trace of your conversation once
-          you leave.
+          This is a free communication tool that is designed for simplicity,
+          privacy, and security. All interaction between you and your online
+          peers is encrypted. There is no record of your conversation once you
+          all leave.
         </Typography>
       </Box>
-      <Tooltip title="View project source code and documentation">
+      <Box
+        sx={{
+          mx: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
         <MuiLink
           href="https://github.com/jeremyckahn/chitchatter"
           target="_blank"
-          sx={{ display: 'block', textAlign: 'center', color: '#fff' }}
+          sx={theme => ({
+            color: theme.palette.text.primary,
+          })}
         >
           <IconButton
             size="large"
             edge="start"
             color="inherit"
             aria-label="Open menu"
-            sx={{ mx: 'auto' }}
           >
             <GitHubIcon sx={{ fontSize: '2em' }} />
           </IconButton>
         </MuiLink>
-      </Tooltip>
+      </Box>
       <Typography variant="body1" sx={{ textAlign: 'center' }}>
         Licensed under{' '}
         <MuiLink
@@ -142,6 +188,11 @@ export function Home({ userId }: HomeProps) {
         </MuiLink>
         .
       </Typography>
+      <EmbedCodeDialog
+        showEmbedCode={showEmbedCode}
+        handleEmbedCodeWindowClose={handleEmbedCodeWindowClose}
+        roomName={roomName}
+      />
     </Box>
   )
 }
